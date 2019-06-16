@@ -15,12 +15,27 @@
     | Valid | the offer is within its validity time frame |
     | Cancelled | the offer has been cancelled during its validity time frame |
     | Expired | the offer is beyond its validity time frame |
+    
+9. A product has a name and description and for simplicity, all products are stored in a json file in the resources directory in "src/main/java/model/resources"
 
 
 ## User stories:
 - A merchant can create simple offers.
 - A merchant can cancel an offer.
 - A merchant can view offers.
+
+## Future improvements:
+
+### Structural changes:
+Depending on the merchant requirements, a builder design patter to create the offers would give the ability to combine various types of catalogue items together, for example, instead of having just a product assigned to the offer, the merchant might want to add an insurance service on the good or some other kind of service. Services as opposed to products are different in terms of some variables, but they do have in common ID, name and a description. Hence, a superclass called CatalogueItem could be implemented in order to have both Product and Service as its child-classes. 
+
+### Functional changes:
+Caching should be implemented in order to not retrieve the data from the db or currently memory. This, combined with scaling this application in Kubernetes nodes, will reduce the request response latency.
+Metrics should be implemented in order to gain knowledge about which functions are the most used and consequently, make those functions more robust or efficient than they are.
+
+## Quickstart
+
+TODO
 
 ## Usage
 

@@ -2,21 +2,44 @@ package api.models;
 
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.UUID;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
+@Entity
+@Table(name = "Offer")
 public class Offer {
 	//constants
 	public static final String VALID__STATUS_OFFER_STRING = "valid";
 	public static final String EXPIRED__STATUS_OFFER_STRING = "expired";
 	public static final String CANCELLED__STATUS_OFFER_STRING = "cancelled";
 	
-	private String id;
+    @Id
+    @GeneratedValue()
+	private long id;
+    
+    @Column(nullable = false)
 	private String description;
+    
+    @Column(nullable = false)
 	private BigDecimal price;
+    
+    @Column(nullable = false)
 	private String currencyCode;
+    
+    @Column(nullable = false)
 	private Date createdOn;
+
+    //in case the validity of the offer is undefined, this value might be empty
+    @Column()
 	private float daysValidFor;
+    
+    @Column(nullable = false)
 	private String productID;
+    
+    @Column(nullable = false)
 	private String status;
 
 	
@@ -26,7 +49,6 @@ public class Offer {
 	 * The id is initialised with a random number
 	 */
 	public Offer() {
-		this.id = UUID.randomUUID().toString();
 	}
 	
 	/**
@@ -44,7 +66,6 @@ public class Offer {
 	 */
 	public Offer(String description, BigDecimal price, String currencyCode, Date createdOn, float daysValidFor,
 			String status, String productID) {
-		this.id = UUID.randomUUID().toString();
 		this.description = description;
 		this.price = price;
 		this.currencyCode = currencyCode;
@@ -57,14 +78,15 @@ public class Offer {
 	/**
 	 * @return the id
 	 */
-	public String getId() {
+	public long getId() {
 		return id;
 	}
 	/**
 	 * FOR TEST PURPOSE ONLY
+	 * 
 	 * @param id the id to set
 	 */
-	public void setId(String id) {
+	public void setId(long id) {
 		this.id = id;
 	}
 	/**

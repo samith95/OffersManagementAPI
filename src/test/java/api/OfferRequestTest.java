@@ -22,6 +22,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,7 +46,6 @@ public class OfferRequestTest {
     
     private String offerPageURL = "/offer/";
 
-
     @Before
     public void initTests() {
         MockitoAnnotations.initMocks(this);
@@ -53,6 +53,7 @@ public class OfferRequestTest {
     }
     
     @Test
+    @Transactional
     public void createAndValidateAndCancelAndValidate() throws Exception {
     	//set up test data
         Offer offer = mockOffer("createAndValidateAndCancelAndValidate");
@@ -83,10 +84,10 @@ public class OfferRequestTest {
 	 * @param	expectedOffer	is the offer to be created by the API
 	 * @return	the Offer ID created by the API
 	 */
-    public String createOfferAndReturnID(Offer expectedOffer) throws Exception {
+    public long createOfferAndReturnID(Offer expectedOffer) throws Exception {
         byte[] offJson = toJson(expectedOffer);
 
-        MvcResult result = mvc.perform(post("/offer")
+        MvcResult result = mvc.perform(post(offerPageURL)
                 .content(offJson)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
@@ -95,7 +96,8 @@ public class OfferRequestTest {
                 .andReturn();
         
         String response = result.getRequest().getContentAsString();
-        return JsonPath.parse(response).read("$[0].id");
+        //retrieve ID from response and convert it to long variable
+        return Long.parseLong(JsonPath.parse(response).read("$[0].id"));
     }
     
 	/**
@@ -128,8 +130,8 @@ public class OfferRequestTest {
 	 *
 	 * @param	offerID	defines the offer ID of the offer to be cancelled by the API
 	 */
-    public void cancelOffer(String offerID) throws Exception {
-        mvc.perform(put(offerPageURL + offerID)
+    public void cancelOffer(long offerID) throws Exception {
+        mvc.perform(put(offerPageURL + Long.toString(offerID))
                 .content(new String("{\"status\":\""+Offer.CANCELLED__STATUS_OFFER_STRING+"\"}").getBytes())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
