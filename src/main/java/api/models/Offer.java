@@ -1,17 +1,24 @@
 package api.models;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDate;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
 
 @Entity
 @Table(name = "Offer")
+@XmlRootElement
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Offer {
 	//constants
+	//when an offer has just been created, it will have an undefined state
+	public static final String UNDEFINED__STATUS_OFFER_STRING = "undefined";
 	public static final String VALID__STATUS_OFFER_STRING = "valid";
 	public static final String EXPIRED__STATUS_OFFER_STRING = "expired";
 	public static final String CANCELLED__STATUS_OFFER_STRING = "cancelled";
@@ -30,14 +37,14 @@ public class Offer {
 	private String currencyCode;
     
     @Column(nullable = false)
-	private Date createdOn;
+	private LocalDate createdOn;
 
     //in case the validity of the offer is undefined, this value might be empty
     @Column()
-	private float daysValidFor;
+	private int daysValidFor;
     
     @Column(nullable = false)
-	private String productID;
+	private long productID;
     
     @Column(nullable = false)
 	private String status;
@@ -64,8 +71,8 @@ public class Offer {
 	 * @param  status  defines what the status of the offer is e.g. valid, expired or cancelled
 	 * @param  productID  id of the product on which the offer is based
 	 */
-	public Offer(String description, BigDecimal price, String currencyCode, Date createdOn, float daysValidFor,
-			String status, String productID) {
+	public Offer(String description, BigDecimal price, String currencyCode, LocalDate createdOn, int daysValidFor,
+			String status, long productID) {
 		this.description = description;
 		this.price = price;
 		this.currencyCode = currencyCode;
@@ -128,25 +135,25 @@ public class Offer {
 	/**
 	 * @return the createdOn
 	 */
-	public Date getCreatedOn() {
+	public LocalDate getCreatedOn() {
 		return createdOn;
 	}
 	/**
 	 * @param createdOn the createdOn to set
 	 */
-	public void setCreatedOn(Date createdOn) {
+	public void setCreatedOn(LocalDate createdOn) {
 		this.createdOn = createdOn;
 	}
 	/**
 	 * @return the daysValidFor
 	 */
-	public float getDaysValidFor() {
+	public int getDaysValidFor() {
 		return daysValidFor;
 	}
 	/**
 	 * @param daysValidFor the daysValidFor to set
 	 */
-	public void setDaysValidFor(float daysValidFor) {
+	public void setDaysValidFor(int daysValidFor) {
 		this.daysValidFor = daysValidFor;
 	}
 	/**
@@ -164,14 +171,14 @@ public class Offer {
 	/**
 	 * @return the productID
 	 */
-	public String getProductID() {
+	public long getProductID() {
 		return productID;
 	}
 
 	/**
 	 * @param productID the product to set
 	 */
-	public void setProductID(String product) {
-		this.productID = product;
+	public void setProductID(long productID) {
+		this.productID = productID;
 	}
 }

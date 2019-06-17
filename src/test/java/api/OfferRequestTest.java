@@ -7,7 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
-import java.util.Calendar;
+import java.time.LocalDate;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -145,18 +145,18 @@ public class OfferRequestTest {
 	 * The function creates an Offer object and set its variables to test data
 	 * In order to keep traceability, the prefix (string passed as parameter)
 	 * should be used by calling functions to state the function name. Such variable will
-	 * be saved in the productID and in the description of the offer.
+	 * be saved in the description of the offer.
 	 *
 	 * @param	prefix	should state the calling function name for traceability
 	 * @return	the test offer object to be used by the test functions
 	 */
     private Offer mockOffer(String prefix) {
         Offer o = new Offer();
-        o.setProductID(prefix);
+        o.setProductID(4621346);
         o.setDescription(prefix);
         o.setPrice(new BigDecimal("100.01"));
         o.setCurrencyCode("EUR");
-        o.setCreatedOn(Calendar.getInstance().getTime());
+        o.setCreatedOn(LocalDate.now());
         o.setDaysValidFor(7);
         return o;
     }

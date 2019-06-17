@@ -16,13 +16,15 @@
     | Cancelled | the offer has been cancelled during its validity time frame |
     | Expired | the offer is beyond its validity time frame |
     
-9. A product has a name and description and for simplicity, all products are stored in a json file in the resources directory in "src/main/java/model/resources"
-
+9. A product has a name and description and for simplicity, all products are stored in a json file in the resources directory in "src/main/java/model/resources".
+10. The starting date of the offer is equal to the creation date.
+11. Once cancelled or expired, an offer cannot be valid again.
+12. An offer is valid for a finite number of days e.g. 3, meaning the offer will be valid for 3 days from the creation date.
 
 ## User stories:
 - A merchant can create simple offers.
 - A merchant can cancel an offer.
-- A merchant can view offers.
+- A merchant can view an offer.
 
 ## Future improvements:
 
@@ -58,7 +60,7 @@ TODO
 	"currencyCode":"currency code of the price e.g. USD",
 	"createdOn":"date on which the offer was created",
 	"daysValidFor":"days the offer is valid for",
-	"status":"defines what the status of the offer is e.g. valid, expired or cancelled"
+	"status":"defines what the status of the offer is i.e. valid, expired or cancelled"
 }
 ```
 
@@ -97,7 +99,7 @@ TODO
 
 **Arguments**
 
-- `"status":"string"` offer's friendly description
+- `"status":"string"` defines what the status of the offer is i.e. valid, expired or cancelled
 
 **Response**
 
