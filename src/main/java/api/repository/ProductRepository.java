@@ -9,5 +9,5 @@ import api.models.Product;
  * will be utilised in future for custom queries on products
  */
 public interface ProductRepository extends CrudRepository<Product, Long>{
-
+	
 }

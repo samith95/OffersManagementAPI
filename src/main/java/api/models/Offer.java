@@ -1,7 +1,6 @@
 package api.models;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -37,7 +36,7 @@ public class Offer {
 	private String currencyCode;
     
     @Column(nullable = false)
-	private LocalDate createdOn;
+	private String createdOn;
 
     //in case the validity of the offer is undefined, this value might be empty
     @Column()
@@ -66,12 +65,12 @@ public class Offer {
 	 * @param  description  offer's friendly description
 	 * @param  price  the price of the offer
 	 * @param  currencyCode  currency code of the price e.g. USD
-	 * @param  createdOn  date on which the offer was created
+	 * @param  createdOn  date on which the offer was created (passed as string for ease of json creation)
 	 * @param  daysValidFor days the offer is valid for
 	 * @param  status  defines what the status of the offer is e.g. valid, expired or cancelled
 	 * @param  productID  id of the product on which the offer is based
 	 */
-	public Offer(String description, BigDecimal price, String currencyCode, LocalDate createdOn, int daysValidFor,
+	public Offer(String description, BigDecimal price, String currencyCode, String createdOn, int daysValidFor,
 			String status, long productID) {
 		this.description = description;
 		this.price = price;
@@ -135,13 +134,13 @@ public class Offer {
 	/**
 	 * @return the createdOn
 	 */
-	public LocalDate getCreatedOn() {
+	public String getCreatedOn() {
 		return createdOn;
 	}
 	/**
 	 * @param createdOn the createdOn to set
 	 */
-	public void setCreatedOn(LocalDate createdOn) {
+	public void setCreatedOn(String createdOn) {
 		this.createdOn = createdOn;
 	}
 	/**

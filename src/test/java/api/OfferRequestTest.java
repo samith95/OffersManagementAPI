@@ -8,6 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,9 +29,13 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
+import api.Application;
+import api.OfferController;
 import api.models.Offer;
+import api.util.Consts;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes=Application.class)
@@ -156,8 +162,8 @@ public class OfferRequestTest {
         o.setDescription(prefix);
         o.setPrice(new BigDecimal("100.01"));
         o.setCurrencyCode("EUR");
-        o.setCreatedOn(LocalDate.now());
-        o.setDaysValidFor(7);
+        o.setCreatedOn(LocalDate.now().format(DateTimeFormatter.ofPattern(Consts.TIMEFORMAT)));
+        o.setDaysValidFor(20);
         return o;
     }
     

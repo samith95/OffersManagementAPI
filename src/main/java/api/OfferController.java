@@ -25,12 +25,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import api.models.Offer;
 import api.service.OfferService;
 
 /*
  * 
- * RESTful API endpoints
+ * RESTful API end points
  *
  */
 
@@ -42,17 +43,17 @@ public class OfferController implements ApplicationEventPublisherAware{
 
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
     
-    //used to store stacktraces in the logs in case of failures
+    //used to store stacktrace in the logs in case of failures
 	private StringWriter errors = new StringWriter();
 
     @Autowired
     private OfferService offerService;
 
     /**
-     * Endpoint utilised to create a new Offer
+     * End point utilised to create a new Offer
      * 
      * @param offer is the offer to be created and saved into the db
-     * @param request	Http request to create a new offer
+     * @param request	HTTP request to create a new offer
      * @param response	201 STATUS_CREATED on success
      */
     @RequestMapping(value = "",
@@ -79,10 +80,10 @@ public class OfferController implements ApplicationEventPublisherAware{
     
 
     /**
-     * Endpoint utilised to retrieve an Offer
+     * End point utilised to retrieve an Offer
      * 
      * @param id of the wanted offer
-     * @param request Http request to retrieve the offer
+     * @param request HTTP request to retrieve the offer
      * @param response 200 STATUS_OK on success
      * @return	the requested offer
      */
@@ -95,21 +96,21 @@ public class OfferController implements ApplicationEventPublisherAware{
         Offer returnedOffer = this.offerService.getOffer(id);
    
         //map utilised to parse the object into a map
-        ObjectMapper oMapper = new ObjectMapper();
+        ObjectMapper objMapper = new ObjectMapper();
         Map<String, Object> objMap = new HashMap<>();
     	
         if (returnedOffer.getId() == 0) {
            log.info("getOffer(): resource not found");
            return new ResponseEntity<Map<String,Object>>(objMap, HttpStatus.NOT_FOUND);
         }
-   
-        objMap = oMapper.convertValue(returnedOffer, Map.class);
+
+        objMap = objMapper.convertValue(returnedOffer, Map.class);
 
         return new ResponseEntity<Map<String, Object>>(objMap, HttpStatus.OK);
     }
 
 	@Override
 	public void setApplicationEventPublisher(ApplicationEventPublisher aep) {
-        this.eventPublisher = aep;		
+        this.eventPublisher = aep;
 	}
 }

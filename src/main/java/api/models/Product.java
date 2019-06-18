@@ -25,7 +25,7 @@ public class Product {
 	 * @param name	name of the product
 	 * @param description	brief description of the product
 	 */
-	public Product(String id, String name, String description) {
+	public Product(String name, String description) {
 		this.name = name;
 		this.description = description;
 	}

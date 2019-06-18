@@ -2,22 +2,26 @@ package api.service;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 import api.models.Offer;
 import api.models.Product;
 import api.repository.OfferRepository;
 import api.repository.ProductRepository;
+import api.util.Consts;
 
 @Service
 public class OfferService {
 	
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
+    
+	static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(Consts.TIMEFORMAT);
 	
     @Autowired
 	private OfferRepository offerRepository;
@@ -61,7 +65,7 @@ public class OfferService {
     
     private Offer intialiseOffer(Offer offer) {
     	//the createdOn date is initialised to the day the request has been done
-		offer.setCreatedOn(LocalDate.now());
+		offer.setCreatedOn(LocalDate.now().format(DateTimeFormatter.ofPattern(Consts.TIMEFORMAT)));
 		//a newly defined Offer will have undefined status
 		offer.setStatus(Offer.UNDEFINED__STATUS_OFFER_STRING);
 		return offer;
@@ -86,9 +90,9 @@ public class OfferService {
     	return offer;
     }
     
-    private Offer checkIfValid(Offer offer) {
+    private Offer checkIfValid(Offer offer) { 	
     	try {
-        	LocalDate createdDate = offer.getCreatedOn();
+        	LocalDate createdDate = LocalDate.parse(offer.getCreatedOn(), dateFormatter);
         	LocalDate currentDate = LocalDate.now();
         	LocalDate validTimeFrame = createdDate.plusDays(offer.getDaysValidFor());
         	
