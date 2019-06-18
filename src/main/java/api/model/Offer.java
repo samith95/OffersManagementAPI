@@ -1,4 +1,4 @@
-package api.models;
+package api.model;
 
 import java.math.BigDecimal;
 import javax.persistence.Column;

@@ -32,7 +32,7 @@ import com.jayway.jsonpath.JsonPath;
 
 import api.Application;
 import api.OfferController;
-import api.models.Offer;
+import api.model.Offer;
 import api.util.Consts;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;

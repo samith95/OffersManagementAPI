@@ -4,8 +4,6 @@ package api;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -24,17 +22,15 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import api.models.Offer;
+import api.model.Offer;
 import api.service.OfferService;
 
-/*
- * 
+/**
  * RESTful API end points
+ * 
+ * @author Samith Silva
  *
  */
-
 @Controller
 @RequestMapping(value = "/offer")
 public class OfferController implements ApplicationEventPublisherAware{
@@ -54,7 +50,11 @@ public class OfferController implements ApplicationEventPublisherAware{
      * 
      * @param offer is the offer to be created and saved into the db
      * @param request	HTTP request to create a new offer
-     * @param response	201 STATUS_CREATED on success
+     * @param response	201 CREATED on success, 400 BAD REQUEST if 
+     * passed offer is not correct (e.g. productID does not exist), 
+     * 500 INTERNAL_SERVER_ERROR if the offer could not be saved in db or
+     * in case of exception
+     * @return id of the newly created offer or empty object otherwise
      */
     @RequestMapping(value = "",
             method = RequestMethod.POST,
@@ -62,20 +62,49 @@ public class OfferController implements ApplicationEventPublisherAware{
             produces = {"application/json"})
     @ResponseStatus(HttpStatus.CREATED)
     public
-    @ResponseBody Map<String, String> 
-    createOffer (@RequestBody Offer offer, HttpServletRequest request, HttpServletResponse response) {
+    @ResponseBody ResponseEntity<Object>
+    createOfferHandler (@RequestBody Offer offer, HttpServletRequest request, HttpServletResponse response) {
+    	log.info(String.format("createOfferHandler(): offer received to be created", Long.toString(offer.getId())));
+        
+    	HashMap<String, String> map = new HashMap<String, String>();
+    	
+    	String errorMsg = "";
+    	
+    	//used to retrieve the auto generated offer id from the db
     	long createdOfferID = 0;
+    	
     	try {
-    	createdOfferID = this.offerService.createOffer(offer);
+	    	createdOfferID = this.offerService.createOffer(offer);
+	    	//CHECK INTERNAL ERROR CODES
+	    	//check whether the passed product ID exists in db 
+	    	if (createdOfferID == -400) {
+	    		errorMsg = "specified productID does not exist in db";
+		        log.info(String.format("createOfferHandler(): %s", errorMsg));
+		        map.put("error:", errorMsg);
+				return new ResponseEntity<Object>(map, HttpStatus.BAD_REQUEST);
+	    	}
+	    	
+	    	//check whether it has been saved successfully into the db
+	    	if (createdOfferID == -500) {
+	    		errorMsg = "offer failed to be saved into the db";
+		        log.info(String.format("createOfferHandler(): %s", errorMsg));
+		        map.put("error:", errorMsg);
+				return new ResponseEntity<Object>(map, HttpStatus.INTERNAL_SERVER_ERROR);
+	    	}
+	    	
 		} catch (Exception e) {
-			e.printStackTrace(new PrintWriter(errors));
-	        log.info("createOffer(): offer: %s could not be created, stacktrace: %s", Long.toString(createdOfferID), errors);
-	        return null;
+    		errorMsg = String.format("offer %s could not be created, stacktrace: %s", Long.toString(createdOfferID), errors);
+	        log.info(String.format("createOfferHandler(): %s", errorMsg));
+	        map.put("error:", "exception thrown in internal createOfferHandler(), please contact Samith Silva");
+			return new ResponseEntity<Object>(map, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-        log.info("offer: %s has been created successfully", Long.toString(createdOfferID));
-    	Map<String, String> map = new HashMap<String, String>();
+    	
+    	//on success, send back id of newly created offer
+        log.info(String.format("createOfferHandler(): offer %s has been created successfully", Long.toString(createdOfferID)));
+        
     	map.put("id", Long.toString(createdOfferID));
-		return map;
+    	
+		return new ResponseEntity<Object>(map, HttpStatus.OK);
     }
     
 
@@ -84,31 +113,74 @@ public class OfferController implements ApplicationEventPublisherAware{
      * 
      * @param id of the wanted offer
      * @param request HTTP request to retrieve the offer
-     * @param response 200 STATUS_OK on success
-     * @return	the requested offer
+     * @param response 200 STATUS_OK on success, 404 NOT_FOUND if the offer is not found
+     * 500 INTERNAL_SERVER_ERROR in case of thrown exception
+     * @return	the requested offer on success, empty otherwise
      */
 	@RequestMapping(value = "/{id}",
             method = RequestMethod.GET,
             produces = {"application/json"})
     public
-    @ResponseBody ResponseEntity<Map<String,Object>>
-    getOffer(@PathVariable("id") long id, HttpServletRequest request, HttpServletResponse response) {
-        Offer returnedOffer = this.offerService.getOffer(id);
-   
-        //map utilised to parse the object into a map
-        ObjectMapper objMapper = new ObjectMapper();
-        Map<String, Object> objMap = new HashMap<>();
+    @ResponseBody ResponseEntity<Object>
+    getOfferHandler(@PathVariable("id") long id, HttpServletRequest request, HttpServletResponse response) {
+    	log.info(String.format("getOfferHandler(): offer %s received to be retrieved", Long.toString(id)));
     	
-        if (returnedOffer.getId() == 0) {
-           log.info("getOffer(): resource not found");
-           return new ResponseEntity<Map<String,Object>>(objMap, HttpStatus.NOT_FOUND);
-        }
-
-        objMap = objMapper.convertValue(returnedOffer, Map.class);
-
-        return new ResponseEntity<Map<String, Object>>(objMap, HttpStatus.OK);
+    	Offer returnedOffer = new Offer();
+    	
+	    try {
+	    	returnedOffer = this.offerService.getOffer(id);
+	        
+	        if (returnedOffer.getId() == 0) {
+	           log.info(String.format("getOfferHandler(): offer %x not found", id));
+	           return new ResponseEntity<Object>(null, HttpStatus.NOT_FOUND);
+	        }
+	        
+		} catch (Exception e) {
+			e.printStackTrace(new PrintWriter(errors));
+	        log.info(String.format("getOfferHandler(): offer %s could not be retrieved, stacktrace: %s", Long.toString(id), errors));
+			return new ResponseEntity<Object>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+        
+        return new ResponseEntity<Object>(returnedOffer, HttpStatus.OK);
+    }
+	
+	
+    /**
+     * End point utilised to cancel an Offer
+     * 
+     * @param id of the wanted offer
+     * @param request HTTP request to retrieve the offer
+     * @param response 204 NO_CONTENT on success, 404 NOT_FOUND if offer is not found
+     * 500 INTERNAL_SERVER_ERROR in case thrown expection
+     */
+    @RequestMapping(value = "/{id}",
+            method = RequestMethod.PUT)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public 
+    @ResponseBody ResponseEntity<Object> 
+    cancelOfferHandler(@PathVariable("id") long id, HttpServletRequest request, HttpServletResponse response) {
+    	log.info(String.format("cancelOfferHandler(): offer %s received to be cancelled", Long.toString(id)));
+    	
+    	try {
+    	
+	    	if(!this.offerService.cancelOffer(id)) {
+	    		//in case offer is not found
+	            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	    	} else {
+	    		//in case offer is cancelled
+	            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+	    	}
+    	
+		} catch (Exception e) {
+			e.printStackTrace(new PrintWriter(errors));
+	        log.info(String.format("cancelOfferHandler(): offer %s could not be cancelled, stacktrace: %s", Long.toString(id), errors));
+			return new ResponseEntity<Object>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
     }
 
+    /**
+     * mandatory function when implementing ApplicationEventPublisherAware interface
+     */
 	@Override
 	public void setApplicationEventPublisher(ApplicationEventPublisher aep) {
         this.eventPublisher = aep;

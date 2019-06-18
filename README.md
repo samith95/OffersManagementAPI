@@ -32,8 +32,9 @@
 Depending on the merchant requirements, a builder design patter to create the offers would give the ability to combine various types of catalogue items together, for example, instead of having just a product assigned to the offer, the merchant might want to add an insurance service on the good or some other kind of service. Services as opposed to products are different in terms of some variables, but they do have in common ID, name and a description. Hence, a superclass called CatalogueItem could be implemented in order to have both Product and Service as its child-classes. 
 
 ### Functional changes:
-Caching should be implemented in order to not retrieve the data from the db or currently memory. This, combined with scaling this application in Kubernetes nodes, will reduce the request response latency.
+- Caching should be implemented in order to not retrieve the data from the db or currently memory. This, combined with scaling this application in Kubernetes nodes, will reduce the request response latency.
 Metrics should be implemented in order to gain knowledge about which functions are the most used and consequently, make those functions more robust or efficient than they are.
+- Add context so that requests thread can be stopped when issue occurs rather than passing the issue back until the handler function. e.g. if an offer is not present in db, an empty offer is sent back to the calling function which will have to check whether the returned obj is empty and so on until the empty object is received by the handler which will decide the error code and what to send back. By using context we should be able to terminate the request's thread and return error code appropriately.
 
 ## Quickstart
 

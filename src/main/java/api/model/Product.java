@@ -1,4 +1,4 @@
-package api.models;
+package api.model;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -25,7 +25,8 @@ public class Product {
 	 * @param name	name of the product
 	 * @param description	brief description of the product
 	 */
-	public Product(String name, String description) {
+	public Product(long id, String name, String description) {
+		this.id = id;
 		this.name = name;
 		this.description = description;
 	}
@@ -33,9 +34,6 @@ public class Product {
     /**
      * Default constructor
      * 
-	 * @param id
-	 * @param name
-	 * @param description
 	 */
 	public Product() {
 	}

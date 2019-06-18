@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import api.models.Offer;
-import api.models.Product;
+import api.model.Offer;
+import api.model.Product;
 import api.repository.OfferRepository;
 import api.repository.ProductRepository;
 import api.util.Consts;
@@ -21,6 +21,7 @@ public class OfferService {
 	
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
     
+    //date formatter used in the class to format LocalDate variables from strings or viceversa
 	static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(Consts.TIMEFORMAT);
 	
     @Autowired
@@ -31,6 +32,7 @@ public class OfferService {
     	
 	/**
 	 * creates an offer and saves it into the db
+	 * 
 	 * <p>
 	 * if no ID is returned, it means that the function failed to create a new record
 	 * 
@@ -45,24 +47,103 @@ public class OfferService {
     	
     	offer = checkOfferValidity(offer);
     	
+    	//checks if product ID is present from returned offer
+    	if(offer.getProductID() == new Offer().getProductID()) {
+    		return new Long(-400);
+    	}
+    	
     	Offer returnedOffer = offerRepository.save(offer);
 		if (returnedOffer == null){
 			log.info("createOffer(): failed to create offer in db");
+			return new Long(-500);
 		}
 		
 		return returnedOffer.getId();
 	}
     
+	/**
+	 * retrieves offer from the db
+	 * 
+	 * <p>
+	 * if no offer is returned, it means that the function failed to find such offer
+	 * 
+	 * @param	id	of the offer to be retrieved
+	 * @return  the retrieved offer
+	 */
+	public Offer getOffer(long id) {
+		Offer off = findOfferByID(id);
+		//check whether returned offer is empty
+		if(off.getId() == new Offer().getId()) {
+			return off;
+		}
+		//check status of the offer by analysing its validity
+		off = checkStatus(off);
+		return off;
+	}
+    
+	/**
+	 * cancels the offer of which id is passed as parameter
+	 * 
+	 * <p>
+	 * this function retrieves the offer from the db, it changes its status
+	 * (if not already cancelled) and saves it back into the db
+	 * 
+	 * @param	offerID	of the offer to be cancelled
+	 * @return true if successful or false if offer wans't found
+	 */
+    @Transactional
+	public boolean cancelOffer(long offerID) {
+		//check whether offer exists in db
+		Offer off = findOfferByID(offerID);
+		if(off.getId() == new Offer().getId()) {
+	    	log.info(String.format("cancelOffer(): offer %s could not be cancelled", 
+	    			Long.toString(offerID)));
+			return false;
+		}
+		
+		//check if offer is already cancelled, if it is, then skip status 
+		//change and save new status in db
+		if(!off.getStatus().equals(Offer.CANCELLED__STATUS_OFFER_STRING)) {
+			if(!updateOfferStatus(off.getId(), Offer.CANCELLED__STATUS_OFFER_STRING)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+    
+    /**
+     * implements logic to validate an offer
+     * 
+     * <p>
+     * - checks if the productID of the passed offer exists in the product table of the db
+     * - checks the status of the offer and updates it if needed
+     * 
+     * @param offer to be validated
+     * @return the validated offer
+     */
     private Offer checkOfferValidity(Offer offer) {
     	//check whether product exists in db
-    	Product returnedProduct = productRepository.findById(offer.getProductID()).orElse(null);
-    	if(returnedProduct == null) {
-			log.info("createOffer(): the requested product id does not exist", Long.toString(offer.getProductID()));
+    	Product prod = productRepository.findById(offer.getProductID()).orElse(null);
+    	if(prod == null) {
+			log.info(String.format("createOffer(): the requested product id does not exist", 
+					Long.toString(offer.getProductID())));
+			return new Offer();
 		}
     	
     	 return checkStatus(offer);
     }
     
+    /**
+     * implements initialisation logic by which any new offer must comply
+     * 
+     * <p>
+     * - sets the current date as the createdOn date of the offer
+     * - sets the status as undefined
+     * 
+     * @param offer represents a simple offer to be initialised with default values
+     * @return the initialised offer
+     */
     private Offer intialiseOffer(Offer offer) {
     	//the createdOn date is initialised to the day the request has been done
 		offer.setCreatedOn(LocalDate.now().format(DateTimeFormatter.ofPattern(Consts.TIMEFORMAT)));
@@ -71,6 +152,19 @@ public class OfferService {
 		return offer;
 	}
 	
+    
+    /**
+     * implements the logic by which offer's status work
+     * 
+     * <p>
+     * if a cancelled or expired offer is passed, the function will
+     * return it back straight away, however, if the status is undefined
+     * or valid, it will check the offers validity and initialise the offer
+     * object accordingly
+     * 
+     * @param offer of which status should be checked
+     * @return the offer with validated status
+     */
     private Offer checkStatus(Offer offer) {
     	
     	//status check logic
@@ -84,12 +178,25 @@ public class OfferService {
     			offer = checkIfValid(offer);
     			break;
     		default:
-    			log.error("checkStatus(): status %s not recognised", offer.getStatus());
+    			log.error(String.format("checkStatus(): status %s not recognised", 
+    					offer.getStatus()));
     	}
     	    	
     	return offer;
     }
     
+    /**
+     * checks whether the offer is valid or expired
+     * 
+     * <p>
+     * this is done by analysing the offer's validity timeframe
+     * and in case of expired offer, the function will update the 
+     * offer's status, save the offer into the db and return the
+     * newly saved object back
+     * 
+     * @param offer
+     * @return offer with correct status
+     */
     private Offer checkIfValid(Offer offer) { 	
     	try {
         	LocalDate createdDate = LocalDate.parse(offer.getCreatedOn(), dateFormatter);
@@ -110,53 +217,70 @@ public class OfferService {
         	}
         	
     	} catch (DateTimeException e) {
-			log.info("checkIfValid(): internal error when parsing offer %s\nstacktrace: %s", Long.toString(offer.getId()), e.getStackTrace().toString());	
+			log.info(String.format("checkIfValid(): internal error when parsing offer "
+					+ "%s\nstacktrace: %s", Long.toString(offer.getId()), 
+					e.getStackTrace().toString()));	
     	}
     	return offer;
     }
     
+    /**
+     * saves passed offer into db
+     * 
+     * @param offer to be saved
+     * @return offer just saved in db (contains OfferID)
+     */
     private Offer saveOffer(Offer offer) {
-		Offer dbOffer = offerRepository.save(offer);
-		if (dbOffer == null){
-			log.info("saveOffer(): failed to create offer in db");
+		Offer off = offerRepository.save(offer);
+		if (off == null){
+			log.info(String.format("saveOffer(): failed to create offer in db"));
 		}
-		return dbOffer;
+		return off;
     }
 	
+	
 	/**
-	 * retrieves offer from the db
-	 * <p>
-	 * if no offer is returned, it means that the function failed to find such offer
+	 * function used to retrieve the offers by ID
 	 * 
-	 * @param	id	of the offer to be retrieved
-	 * @return  the retrieved offer
+	 * <p>
+	 * in case the offer is not found, an empty Offer is passed,
+	 * the calling function must check whether the returned offer
+	 * obj is empty
+	 * 
+	 * @param offerID
+	 * @return
 	 */
-	public Offer getOffer(long id) {
-		Offer returnedOffer = offerRepository.findById(id).orElse(new Offer());
-		if(returnedOffer == new Offer()) {
-			log.info("getOffer(): failed to get offer %s in db", Long.toString(id));
+	public Offer findOfferByID(long offerID) {
+		Offer off = offerRepository.findById(offerID).orElse(new Offer());
+		//check if 
+		if(off.getId() == new Offer().getId()) {
+			log.info(String.format("findOfferByID(): failed to get offer %s in db", 
+					Long.toString(offerID)));
 		}
-		return returnedOffer;
+		return off;
 	}
+	
 	
 	/**
 	 * updates the status of an offer
+	 * 
 	 * <p>
 	 * if multiple rows are modified this function will throw an exception
 	 * 
 	 * @param	id	of the offer to be updated
 	 * @param	status	new status by which the offer must be updated
-	 * @return  true if successfull update, false otherwise
+	 * @return  true if successful update, false otherwise
 	 */
 	public boolean updateOfferStatus(long id, String status) {
-		int modifiedRowCount = offerRepository.updateOfferStatus(status, Long.toString(id));
+		int modifiedRowCount = offerRepository.updateOfferStatus(status, id);
 		if(modifiedRowCount == 0) {
-			log.info("updateOfferStatus(): failed to update offer \"%s\" in db", Long.toString(id));
+			log.info(String.format("updateOfferStatus(): failed to update offer \"%s\" in db", 
+					Long.toString(id)));
 			return false;
 		}
 		if(modifiedRowCount>1) {
-			log.info("updateOfferStatus(): multiple row (%d) updated when updating offer \"%s\" in db", 
-					modifiedRowCount, Long.toString(id));
+			log.info(String.format("updateOfferStatus(): multiple row (%d) updated when updating "
+					+ "offer \"%s\" in db", modifiedRowCount, Long.toString(id)));
 			throw new RuntimeException("Internal error, multiple rows updated");
 		}
 		return true;

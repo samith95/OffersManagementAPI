@@ -2,7 +2,7 @@ package api.repository;
 
 import org.springframework.data.repository.CrudRepository;
 
-import api.models.Product;
+import api.model.Product;
 
 /**
  * Repository used to delegate custom updates and CRUD operations, 
