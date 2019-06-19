@@ -36,6 +36,7 @@ Depending on the merchant requirements, a builder design patter to create the of
 Metrics should be implemented in order to gain knowledge about which functions are the most used and consequently, make those functions more robust or efficient than they are.
 - Add context so that requests thread can be stopped when issue occurs rather than passing the issue back until the handler function. e.g. if an offer is not present in db, an empty offer is sent back to the calling function which will have to check whether the returned obj is empty and so on until the empty object is received by the handler which will decide the error code and what to send back. By using context we should be able to terminate the request's thread and return error code appropriately.
 
+
 ## Quickstart
 
 TODO
@@ -55,12 +56,12 @@ TODO
 ```json
 {
 	"id":"unique offer ID",
-	"productID":"id of the product on which the offer is based",
 	"description":"offer's friendly description",
 	"price":"the price of the offer",
 	"currencyCode":"currency code of the price e.g. USD",
 	"createdOn":"date on which the offer was created",
 	"daysValidFor":"days the offer is valid for",
+	"productID":"id of the product on which the offer is based",
 	"status":"defines what the status of the offer is i.e. valid, expired or cancelled"
 }
 ```
@@ -77,8 +78,8 @@ TODO
 **Arguments**
 
 - `"description":"string"` offer's friendly description
-- `"productID":"string"` id of the product on which the offer is based
-- `"price":"string"` price of the offer
+- `"productID":"number"` id of the product on which the offer is based
+- `"price":"number"` price of the offer
 - `"currencyCode":"string"` three letter currency code of the price e.g. USD
 - `"daysValidFor":"number"` days the offer is valid for
 
@@ -96,11 +97,7 @@ TODO
 
 **Definition**
 
-`PUT /offer/<offer identifier>`
-
-**Arguments**
-
-- `"status":"string"` defines what the status of the offer is i.e. valid, expired or cancelled
+`PUT /offer/cancel/<offer identifier>`
 
 **Response**
 

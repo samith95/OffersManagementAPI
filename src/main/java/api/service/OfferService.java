@@ -2,8 +2,6 @@ package api.service;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +19,6 @@ public class OfferService {
 	
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
     
-    //date formatter used in the class to format LocalDate variables from strings or viceversa
-	static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(Consts.TIMEFORMAT);
-	
     @Autowired
 	private OfferRepository offerRepository;
     
@@ -88,22 +83,23 @@ public class OfferService {
 	 * this function retrieves the offer from the db, it changes its status
 	 * (if not already cancelled) and saves it back into the db
 	 * 
-	 * @param	offerID	of the offer to be cancelled
+	 * @param	id	of the offer to be cancelled
 	 * @return true if successful or false if offer wans't found
 	 */
     @Transactional
-	public boolean cancelOffer(long offerID) {
+	public boolean cancelOffer(long id) {
 		//check whether offer exists in db
-		Offer off = findOfferByID(offerID);
+		Offer off = findOfferByID(id);
 		if(off.getId() == new Offer().getId()) {
 	    	log.info(String.format("cancelOffer(): offer %s could not be cancelled", 
-	    			Long.toString(offerID)));
+	    			Long.toString(id)));
 			return false;
 		}
 		
 		//check if offer is already cancelled, if it is, then skip status 
 		//change and save new status in db
 		if(!off.getStatus().equals(Offer.CANCELLED__STATUS_OFFER_STRING)) {
+	    	//if not cancelled then update the offer status, if the update fails, return false
 			if(!updateOfferStatus(off.getId(), Offer.CANCELLED__STATUS_OFFER_STRING)) {
 				return false;
 			}
@@ -146,7 +142,7 @@ public class OfferService {
      */
     private Offer intialiseOffer(Offer offer) {
     	//the createdOn date is initialised to the day the request has been done
-		offer.setCreatedOn(LocalDate.now().format(DateTimeFormatter.ofPattern(Consts.TIMEFORMAT)));
+		offer.setCreatedOn(LocalDate.now().format(Consts.DATEFORMATTER));
 		//a newly defined Offer will have undefined status
 		offer.setStatus(Offer.UNDEFINED__STATUS_OFFER_STRING);
 		return offer;
@@ -199,7 +195,7 @@ public class OfferService {
      */
     private Offer checkIfValid(Offer offer) { 	
     	try {
-        	LocalDate createdDate = LocalDate.parse(offer.getCreatedOn(), dateFormatter);
+        	LocalDate createdDate = LocalDate.parse(offer.getCreatedOn(), Consts.DATEFORMATTER);
         	LocalDate currentDate = LocalDate.now();
         	LocalDate validTimeFrame = createdDate.plusDays(offer.getDaysValidFor());
         	
@@ -247,15 +243,15 @@ public class OfferService {
 	 * the calling function must check whether the returned offer
 	 * obj is empty
 	 * 
-	 * @param offerID
-	 * @return
+	 * @param id id of the offer to be retrieved
+	 * @return offer from db on success, empty offer otherwise
 	 */
-	public Offer findOfferByID(long offerID) {
-		Offer off = offerRepository.findById(offerID).orElse(new Offer());
+	public Offer findOfferByID(long id) {
+		Offer off = offerRepository.findById(id).orElse(new Offer());
 		//check if 
 		if(off.getId() == new Offer().getId()) {
 			log.info(String.format("findOfferByID(): failed to get offer %s in db", 
-					Long.toString(offerID)));
+					Long.toString(id)));
 		}
 		return off;
 	}
@@ -283,6 +279,8 @@ public class OfferService {
 					+ "offer \"%s\" in db", modifiedRowCount, Long.toString(id)));
 			throw new RuntimeException("Internal error, multiple rows updated");
 		}
+		log.info(String.format("updateOfferStatus(): offer %s updated successfully", 
+				Long.toString(id)));
 		return true;
 	}
 }

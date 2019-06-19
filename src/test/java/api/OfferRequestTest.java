@@ -6,10 +6,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,7 +29,8 @@ import com.jayway.jsonpath.JsonPath;
 import api.Application;
 import api.OfferController;
 import api.model.Offer;
-import api.util.Consts;
+import api.model.Product;
+import api.repository.ProductRepository;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
@@ -48,9 +45,13 @@ public class OfferRequestTest {
     @Autowired
     WebApplicationContext context;
     
+    
+    @Autowired
+	private ProductRepository productRepository;
+    
     private MockMvc mvc;
     
-    private String offerPageURL = "/offer/";
+    private String offerPageURL = "/offer";
 
     @Before
     public void initTests() {
@@ -58,11 +59,20 @@ public class OfferRequestTest {
         mvc = MockMvcBuilders.webAppContextSetup(context).build();
     }
     
+    /**
+     * acceptance test to validate user stories
+     * @throws Exception 
+     */
     @Test
     @Transactional
     public void createAndValidateAndCancelAndValidate() throws Exception {
     	//set up test data
-        Offer offer = mockOffer("createAndValidateAndCancelAndValidate");
+        Offer offer = TestObject.mockOffer("createAndValidateAndCancelAndValidate");
+        
+		//save valid product into product repository for successful offer creation
+		Product validProduct = TestObject.mockProduct("successful scenario - valid productID");
+		validProduct = productRepository.save(validProduct);
+		offer.setProductID(validProduct.getId());
         
         //create offer and set offer ID
         offer.setId(createOfferAndReturnID(offer));
@@ -74,7 +84,7 @@ public class OfferRequestTest {
         
         //cancel the just created offer
         cancelOffer(offer.getId());
-        
+                
         //the expected offer should now be Cancelled, hence set offer to cancelled and check the response
         offer.setStatus(Offer.CANCELLED__STATUS_OFFER_STRING);
         //query the just updated offer, validate its content and check that it has been cancelled
@@ -85,7 +95,7 @@ public class OfferRequestTest {
 	 * Creates an offer using the passed offer object and returns its offer ID
 	 * <p>
 	 * The function sends a POST request to the API to create an offer
-	 * The API then sends the Offer ID (which is generated in the API) back 
+	 * The API then sends back the Offer ID (which is generated in the API) 
 	 *
 	 * @param	expectedOffer	is the offer to be created by the API
 	 * @return	the Offer ID created by the API
@@ -98,12 +108,11 @@ public class OfferRequestTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.description", is(expectedOffer.getDescription())))
                 .andReturn();
         
-        String response = result.getRequest().getContentAsString();
+        String response = result.getResponse().getContentAsString();
         //retrieve ID from response and convert it to long variable
-        return Long.parseLong(JsonPath.parse(response).read("$[0].id"));
+        return Long.parseLong(JsonPath.parse(response).read("$.id"));
     }
     
 	/**
@@ -116,56 +125,32 @@ public class OfferRequestTest {
 	 * @param	offer	is the offer to be created by the API
 	 */
     public void retrieveAndValidateOffer(Offer expectedOffer) throws Exception {
-        mvc.perform(get(offerPageURL + expectedOffer.getId())
+        mvc.perform(get(offerPageURL + "/" + expectedOffer.getId())
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(expectedOffer.getId())))
-                .andExpect(jsonPath("$.productID", is(expectedOffer.getProductID())))
+                .andExpect(jsonPath("$.id", is(Math.toIntExact(expectedOffer.getId()))))
+                .andExpect(jsonPath("$.productID", is(Math.toIntExact(expectedOffer.getProductID()))))
                 .andExpect(jsonPath("$.description", is(expectedOffer.getDescription())))
-                .andExpect(jsonPath("$.price", is(expectedOffer.getPrice())))
+                .andExpect(jsonPath("$.price", is((expectedOffer.getPrice().intValueExact()))))
                 .andExpect(jsonPath("$.currencyCode", is(expectedOffer.getCurrencyCode())))
 		        .andExpect(jsonPath("$.createdOn", is(expectedOffer.getCreatedOn())))
 		        .andExpect(jsonPath("$.daysValidFor", is(expectedOffer.getDaysValidFor())))
-		        .andExpect(jsonPath("$.status", is(expectedOffer.getDaysValidFor())));
+		        .andExpect(jsonPath("$.status", is(expectedOffer.getStatus())));
     }
     
 	/**
 	 * Cancels the offer specified in offerID passed parameter
 	 * <p>
-	 * The function sends a PUT request to the API to edit the status variable of the offer
+	 * The function sends a PUT request to the API to cancel the offer
 	 *
 	 * @param	offerID	defines the offer ID of the offer to be cancelled by the API
 	 */
     public void cancelOffer(long offerID) throws Exception {
-        mvc.perform(put(offerPageURL + Long.toString(offerID))
-                .content(new String("{\"status\":\""+Offer.CANCELLED__STATUS_OFFER_STRING+"\"}").getBytes())
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON))
+        mvc.perform(put(offerPageURL +"/cancel/"+ offerID))
                 .andExpect(status().isNoContent())
                 .andReturn();
     }
     
-	/**
-	 * Creates a mock Offer object initialised with the prefix passed as parameter
-	 * <p>
-	 * The function creates an Offer object and set its variables to test data
-	 * In order to keep traceability, the prefix (string passed as parameter)
-	 * should be used by calling functions to state the function name. Such variable will
-	 * be saved in the description of the offer.
-	 *
-	 * @param	prefix	should state the calling function name for traceability
-	 * @return	the test offer object to be used by the test functions
-	 */
-    private Offer mockOffer(String prefix) {
-        Offer o = new Offer();
-        o.setProductID(4621346);
-        o.setDescription(prefix);
-        o.setPrice(new BigDecimal("100.01"));
-        o.setCurrencyCode("EUR");
-        o.setCreatedOn(LocalDate.now().format(DateTimeFormatter.ofPattern(Consts.TIMEFORMAT)));
-        o.setDaysValidFor(20);
-        return o;
-    }
     
 	/**
 	 * Converts a passed object into a byte array

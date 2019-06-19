@@ -104,7 +104,7 @@ public class OfferController implements ApplicationEventPublisherAware{
         
     	map.put("id", Long.toString(createdOfferID));
     	
-		return new ResponseEntity<Object>(map, HttpStatus.OK);
+		return new ResponseEntity<Object>(map, HttpStatus.CREATED);
     }
     
 
@@ -138,9 +138,9 @@ public class OfferController implements ApplicationEventPublisherAware{
 		} catch (Exception e) {
 			e.printStackTrace(new PrintWriter(errors));
 	        log.info(String.format("getOfferHandler(): offer %s could not be retrieved, stacktrace: %s", Long.toString(id), errors));
-			return new ResponseEntity<Object>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ResponseEntity<Object>(null, HttpStatus.INTERNAL_SERVER_ERROR); 
 		}
-        
+        log.info(String.format("getOfferHandler(): offer %x was succesffuly found status: %s", id, returnedOffer.getStatus()));
         return new ResponseEntity<Object>(returnedOffer, HttpStatus.OK);
     }
 	
@@ -153,7 +153,7 @@ public class OfferController implements ApplicationEventPublisherAware{
      * @param response 204 NO_CONTENT on success, 404 NOT_FOUND if offer is not found
      * 500 INTERNAL_SERVER_ERROR in case thrown expection
      */
-    @RequestMapping(value = "/{id}",
+    @RequestMapping(value = "/cancel/{id}",
             method = RequestMethod.PUT)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public 
@@ -164,10 +164,12 @@ public class OfferController implements ApplicationEventPublisherAware{
     	try {
     	
 	    	if(!this.offerService.cancelOffer(id)) {
-	    		//in case offer is not found
+	    		//in case offer is not found.
+		        log.info(String.format("cancelOfferHandler(): offer %s could not be found", Long.toString(id)));
 	            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	    	} else {
 	    		//in case offer is cancelled
+		        log.info(String.format("cancelOfferHandler(): offer %s has been cancelled", Long.toString(id)));
 	            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	    	}
     	

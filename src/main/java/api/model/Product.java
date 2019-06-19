@@ -72,4 +72,11 @@ public class Product {
 	public long getId() {
 		return id;
 	}
+	
+	/**FOR TEST PURPOSES ONLY
+	 * @param the id value to be set
+	 */
+	public void setId(long id) {
+		this.id = id;
+	}
 }
