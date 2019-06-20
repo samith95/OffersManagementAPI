@@ -1,5 +1,9 @@
 # OffersManagementAPI
 
+OffersManagementAPI is a simple Spring Boot Java application designed to offer merchant a convenient way of storing and keep record of their offers. Every offer will have an offer referenced to it. Offers are managed through requests to the application, please read the assumptions made in the "Assumptions" section. 
+
+To set up the application and to run the tests, please follow the "How to run" section.
+
 ## User stories:
 - A merchant can create simple offers.
 - A merchant can cancel an offer.
