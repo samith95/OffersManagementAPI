@@ -100,7 +100,10 @@ public class OfferService {
 		//change and save new status in db
 		if(!off.getStatus().equals(Offer.CANCELLED__STATUS_OFFER_STRING)) {
 	    	//if not cancelled then update the offer status, if the update fails, return false
-			if(!updateOfferStatus(off.getId(), Offer.CANCELLED__STATUS_OFFER_STRING)) {
+			off.setStatus(Offer.CANCELLED__STATUS_OFFER_STRING);
+			off = saveOffer(off);
+			//check for errors in saving
+			if (off == null) {
 				return false;
 			}
 		}
@@ -254,33 +257,5 @@ public class OfferService {
 					Long.toString(id)));
 		}
 		return off;
-	}
-	
-	
-	/**
-	 * updates the status of an offer
-	 * 
-	 * <p>
-	 * if multiple rows are modified this function will throw an exception
-	 * 
-	 * @param	id	of the offer to be updated
-	 * @param	status	new status by which the offer must be updated
-	 * @return  true if successful update, false otherwise
-	 */
-	public boolean updateOfferStatus(long id, String status) {
-		int modifiedRowCount = offerRepository.updateOfferStatus(status, id);
-		if(modifiedRowCount == 0) {
-			log.info(String.format("updateOfferStatus(): failed to update offer \"%s\" in db", 
-					Long.toString(id)));
-			return false;
-		}
-		if(modifiedRowCount>1) {
-			log.info(String.format("updateOfferStatus(): multiple row (%d) updated when updating "
-					+ "offer \"%s\" in db", modifiedRowCount, Long.toString(id)));
-			throw new RuntimeException("Internal error, multiple rows updated");
-		}
-		log.info(String.format("updateOfferStatus(): offer %s updated successfully", 
-				Long.toString(id)));
-		return true;
 	}
 }

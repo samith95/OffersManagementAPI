@@ -6,15 +6,22 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -45,6 +52,10 @@ public class OfferRequestTest {
     @Autowired
     WebApplicationContext context;
     
+    protected final Logger log = LoggerFactory.getLogger(this.getClass());
+    
+    //used to store stacktrace in the logs in case of failures
+	private StringWriter errors = new StringWriter();
     
     @Autowired
 	private ProductRepository productRepository;
@@ -61,34 +72,41 @@ public class OfferRequestTest {
     
     /**
      * acceptance test to validate user stories
-     * @throws Exception 
+     * @throws Exception from json conversion
      */
     @Test
     @Transactional
     public void createAndValidateAndCancelAndValidate() throws Exception {
-    	//set up test data
-        Offer offer = TestObject.mockOffer("createAndValidateAndCancelAndValidate");
+    	try {
+    		
+	    	//set up test data
+	        Offer offer = TestObject.mockOffer("createAndValidateAndCancelAndValidate");
+	        
+			//save valid product into product repository for successful offer creation
+			Product validProduct = TestObject.mockProduct("successful scenario - valid productID");
+			validProduct = productRepository.save(validProduct);
+			offer.setProductID(validProduct.getId());
+	        
+	        //create offer and set offer ID
+	        offer.setId(createOfferAndReturnID(offer));
+	        
+	        //the expected offer should now be Cancelled, hence set offer to cancelled and check the response
+	        offer.setStatus(Offer.VALID__STATUS_OFFER_STRING);
+	        //query the just created offer and validate its content
+	        retrieveAndValidateOffer(offer);
+	        
+	        //cancel the just created offer
+	        cancelOffer(offer.getId());
+	        
+	        //the expected offer should now be Cancelled, hence set offer to cancelled and check the response
+	        offer.setStatus(Offer.CANCELLED__STATUS_OFFER_STRING);
+	        //query the just updated offer, validate its content and check that it has been cancelled
+	        retrieveAndValidateOffer(offer);
         
-		//save valid product into product repository for successful offer creation
-		Product validProduct = TestObject.mockProduct("successful scenario - valid productID");
-		validProduct = productRepository.save(validProduct);
-		offer.setProductID(validProduct.getId());
-        
-        //create offer and set offer ID
-        offer.setId(createOfferAndReturnID(offer));
-        
-        //the expected offer should now be Cancelled, hence set offer to cancelled and check the response
-        offer.setStatus(Offer.VALID__STATUS_OFFER_STRING);
-        //query the just created offer and validate its content
-        retrieveAndValidateOffer(offer);
-        
-        //cancel the just created offer
-        cancelOffer(offer.getId());
-                
-        //the expected offer should now be Cancelled, hence set offer to cancelled and check the response
-        offer.setStatus(Offer.CANCELLED__STATUS_OFFER_STRING);
-        //query the just updated offer, validate its content and check that it has been cancelled
-        retrieveAndValidateOffer(offer);
+    	}catch(Exception e) {
+			e.printStackTrace(new PrintWriter(errors));
+	        log.info(String.format("createAndValidateAndCancelAndValidate(): stacktrace: %s", errors));
+    	}
     }
     
 	/**
@@ -99,6 +117,7 @@ public class OfferRequestTest {
 	 *
 	 * @param	expectedOffer	is the offer to be created by the API
 	 * @return	the Offer ID created by the API
+	 * @throws Exception from json conversion
 	 */
     public long createOfferAndReturnID(Offer expectedOffer) throws Exception {
         byte[] offJson = toJson(expectedOffer);
@@ -122,7 +141,8 @@ public class OfferRequestTest {
 	 * The API then sends the requested Offer back
 	 * The function then validates the content of the response against the passed expectedOffer 
 	 *
-	 * @param	offer	is the offer to be created by the API
+	 * @param	expectedOffer	is the offer to be created by the API
+	 * @throws Exception from json conversion
 	 */
     public void retrieveAndValidateOffer(Offer expectedOffer) throws Exception {
         mvc.perform(get(offerPageURL + "/" + expectedOffer.getId())
@@ -144,6 +164,7 @@ public class OfferRequestTest {
 	 * The function sends a PUT request to the API to cancel the offer
 	 *
 	 * @param	offerID	defines the offer ID of the offer to be cancelled by the API
+	 * @throws Exception from json conversion
 	 */
     public void cancelOffer(long offerID) throws Exception {
         mvc.perform(put(offerPageURL +"/cancel/"+ offerID))
@@ -157,6 +178,7 @@ public class OfferRequestTest {
 	 *
 	 * @param	obj	object to be converted into byte array
 	 * @return	byte array of the passed object
+	 * @throws Exception from json processing
 	 */
     private byte[] toJson(Object obj) throws Exception {
         ObjectMapper map = new ObjectMapper();
