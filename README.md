@@ -22,11 +22,11 @@ To set up the application and to run the tests, please follow the "How to run" s
 7. Deriving from assumption 4, a merchant must be able to view expired offers which means, offers must be kept after their validity time frame.
 8. An offer can have three statuses: 
 
-    | State | Description | Description |Description |
-    | ------ | ------ |------|------|
-    | Valid | the offer is within its validity time frame |Description |Description |
-    | Cancelled | the offer has been cancelled during its validity time frame |Description |Description |
-    | Expired | the offer is beyond its validity time frame |Description |Description |
+    | State | Description | 
+    | ------ | ------ |
+    | Valid | the offer is within its validity time frame |
+    | Cancelled | the offer has been cancelled during its validity time frame |
+    | Expired | the offer is beyond its validity time frame |
     
 9. A product has a name and description and for simplicity, all products are stored in a json file in the resources directory in "src/main/java/model/resources".
 10. The starting date of the offer is equal to the creation date.
